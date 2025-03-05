@@ -1,0 +1,84 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  DELIVERER
+}
+
+model User {
+  id       String     @id @default(uuid())
+  name     String
+  document String     @unique
+  password String
+  role     UserRole   @default(DELIVERER)
+  Delivery Delivery[]
+
+  @@map("users")
+}
+
+enum DeliveryStatus {
+  IDLE
+  AWAITING
+  RETRIEVED
+  DELIVERED
+  RETURNED
+}
+
+model Delivery {
+  id           String         @id @default(uuid())
+  delivererId  String?
+  recipient    String
+  address      String
+  neighborhood String
+  city         String
+  latitude     Float
+  longitude    Float
+  status       DeliveryStatus @default(IDLE)
+  preparedAt   DateTime?      @map("prepared_at")
+  retrievedAt  DateTime?      @map("retrieved_at")
+  deliveredAt  DateTime?      @map("delivered_at")
+  returnedAt   DateTime?      @map("returned_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime?      @updatedAt @map("updated_at")
+
+  user       User?        @relation(fields: [delivererId], references: [id])
+  attachment Attachment[]
+
+  @@map("deliveries")
+}
+
+model Attachment {
+  id         String   @id @default(uuid())
+  deliveryId String?  @map("delivery_id")
+  title      String
+  url        String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  delivery Delivery? @relation(fields: [deliveryId], references: [id])
+
+  @@map("attachments")
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  recipient String
+  title     String
+  content   String
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@map("notifications")
+}
